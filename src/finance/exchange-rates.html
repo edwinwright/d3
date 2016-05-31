@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>D3 Example</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <link href='//fonts.googleapis.com/css?family=Poiret+One' rel='stylesheet' type='text/css'>
+    <style>
+
+      .axis text {
+        font: 1rem sans-serif;
+        font-family: 'Poiret One', cursive;
+      }
+
+      .axis path,
+      .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+      }
+
+    </style>
+  </head>
+  <body>
+    <script>
+
+      const outerWidth = 900,
+      			outerHeight = 250,
+      			margin = { left: 100, top: 30, right: 30, bottom: 50 },
+      			barPadding = 0.2,
+      			xColumn = "symbol",
+      			yColumn = "rate",
+      			colorColumn = "symbol";
+
+      const innerWidth  = outerWidth  - margin.left - margin.right,
+      			innerHeight = outerHeight - margin.top  - margin.bottom;
+
+      const svg = d3.select("body").append("svg")
+        .attr("width",  outerWidth)
+        .attr("height", outerHeight);
+      
+      const g = svg.append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+      const xAxisG = g.append("g")
+      	.attr("class", "x axis")
+        .attr("transform", `translate(0, ${innerHeight})`);
+      const yAxisG = g.append("g")
+      	.attr("class", "y axis");
+
+      const xScale = d3.scale.ordinal().rangeBands([0, innerWidth], barPadding),
+      			yScale = d3.scale.linear().range([innerHeight, 0]),
+      			colorScale = d3.scale.category20();
+
+      const xAxis = d3.svg.axis().scale(xScale)
+      	.outerTickSize(0);
+      const yAxis = d3.svg.axis().scale(yScale)
+      	.orient("left")
+      	.ticks(5)
+      	.tickFormat(d3.format("s"))
+      	.outerTickSize(0);
+
+      function render(data){
+
+        xScale.domain(data.map(d => d[xColumn]));
+        yScale.domain([0, d3.max(data, d => d[yColumn])]);
+
+        xAxisG.call(xAxis);
+        yAxisG.call(yAxis);
+
+        const bars = g.selectAll("rect").data(data);
+        bars.enter().append("rect");
+
+        // Draws from the top down - so height goes down fro x,y position
+        bars
+          .attr("x",			d => xScale(d[xColumn]))
+          .attr("y", 			d => yScale(d[yColumn]))
+          .attr("width",  xScale.rangeBand())
+          .attr("height", d => innerHeight - yScale(d[yColumn]))
+          .attr("fill", 	d => colorScale(d[colorColumn]));
+
+        bars.exit().remove();
+        
+      }
+
+      // function type(d){
+      //   d.population = +d.population;
+      //   return d;
+      // }
+
+      d3.json('http://api.fixer.io/latest', (error, data) => {
+        if (error) return console.warn(error);
+
+        let rates = [];
+        for (prop in data.rates) {
+          rates.push({
+            symbol: prop,
+            rate: data.rates[prop]
+          });
+        }
+
+        rates = rates.filter(v => v.rate < 10);
+
+        console.log(rates);
+        render(rates);
+      });
+
+    </script>
+  </body>
+</html>

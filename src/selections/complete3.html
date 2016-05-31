@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>D3 Example</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+  </head>
+  <body>
+
+    <script>
+
+      const outerWidth = 300,
+            outerHeight = 250,
+            rMin = 1,
+            rMax = 6,
+            xColumn = 'sepal_length',
+            yColumn = 'petal_length',
+            rColumn = 'sepal_width',
+            colorColumn = 'species';
+
+      const svg = d3.select("body").append("svg")
+        .attr("width",  outerWidth)
+        .attr("height", outerHeight);
+
+      const xScale = d3.scale.linear().range([0, outerWidth]),
+            yScale = d3.scale.linear().range([outerHeight, 0]),
+            rScale = d3.scale.linear().range([rMin, rMax]),
+            colorScale = d3.scale.category10();
+
+      function render(data){
+
+        xScale.domain(d3.extent(data, d => d[xColumn]));
+        yScale.domain(d3.extent(data, d => d[yColumn]));
+        rScale.domain(d3.extent(data, d => d[rColumn]));
+
+        // Bind data
+        const circles = svg.selectAll("circle").data(data);
+        
+        // Enter
+        circles.enter().append("circle");
+
+        // Update
+        circles
+          .attr("cx",     d => xScale(d[xColumn]))
+          .attr("cy",     d => yScale(d[yColumn]))
+          .attr("r",      d => rScale(d[rColumn]))
+          .attr("fill", d => colorScale(d[colorColumn]));
+
+        // Exit
+        circles.exit().remove();
+      }
+
+      function type(d) {
+        d.sepal_length = +d.sepal_length;
+        d.sepal_width = +d.sepal_width;
+        d.petal_length = +d.petal_length;
+        d.petal_width = +d.petal_width;
+        return d;
+      }
+
+      d3.csv('/assets/data/iris.csv', type, render);
+
+    </script>
+
+  </body>
+</html>
