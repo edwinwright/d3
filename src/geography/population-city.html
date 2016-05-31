@@ -11,7 +11,7 @@
       }
 
       circle {
-        fill: rgba(255, 255, 255, 0.2);
+        opacity: 0.5;
       }
     </style>
   </head>
@@ -27,6 +27,7 @@
             xColumn = 'longitude',
             yColumn = 'latitude',
             rColumn = 'population',
+            colorColumn = 'population',
             peoplePerPixel = 100000;
 
       const svg = d3.select("body").append("svg")
@@ -38,13 +39,15 @@
 
       const xScale = d3.scale.linear().range([0, innerWidth]),
             yScale = d3.scale.linear().range([innerHeight, 0]),
-            rScale = d3.scale.sqrt();
+            rScale = d3.scale.sqrt(),
+            colorScale = d3.scale.linear().range(['#ddd', '#f00']);
 
       function render(data){
 
         xScale.domain(d3.extent(data, d => d[xColumn]));
         yScale.domain(d3.extent(data, d => d[yColumn]));
         rScale.domain([0, d3.max(data, d => d[rColumn])]);
+        colorScale.domain([0, d3.max(data, d => d[colorColumn])]);
 
         // Compute the size of the biggest circle as a function of peoplePerPixel.
         const peopleMax = rScale.domain()[1],
@@ -63,7 +66,8 @@
         circles
           .attr("cx", d => xScale(d[xColumn]))
           .attr("cy", d => yScale(d[yColumn]))
-          .attr("r",  d => rScale(d[rColumn]));
+          .attr("r",  d => rScale(d[rColumn]))
+          .attr("fill", d => colorScale(d[colorColumn]));
 
         // Exit
         circles.exit().remove();
