@@ -24,13 +24,15 @@
   <body>
     <script>
 
-      const outerWidth = 500,
+      const outerWidth = 900,
       			outerHeight = 250,
       			margin = { left: 100, top: 30, right: 30, bottom: 50 },
       			barPadding = 0.2,
-      			xColumn = "name",
-      			yColumn = "population",
-      			colorColumn = "name";
+      			xColumn = "symbol",
+      			yColumn = "rate",
+      			colorColumn = "symbol"
+            yAxisLabelText = "Population",
+            yAxisLabelOffset = 35;
 
       const innerWidth  = outerWidth  - margin.left - margin.right,
       			innerHeight = outerHeight - margin.top  - margin.bottom;
@@ -45,12 +47,18 @@
       const xAxisG = g.append("g")
       	.attr("class", "x axis")
         .attr("transform", `translate(0, ${innerHeight})`);
+
       const yAxisG = g.append("g")
       	.attr("class", "y axis");
 
+      const yAxisLabel = yAxisG.append("text")
+        .style("text-anchor", "middle")
+        .attr("transform", "translate(-" + yAxisLabelOffset + "," + (innerHeight / 2) + ") rotate(-90)")
+        .attr("class", "label");
+
       const xScale = d3.scale.ordinal().rangeBands([0, innerWidth], barPadding),
       			yScale = d3.scale.linear().range([innerHeight, 0]),
-      			colorScale = d3.scale.category10();
+      			colorScale = d3.scale.category20();
 
       const xAxis = d3.svg.axis().scale(xScale)
       	.outerTickSize(0);
@@ -60,35 +68,52 @@
       	.tickFormat(d3.format("s"))
       	.outerTickSize(0);
 
-      function render(data){
+      function render(data) {
 
-        xScale.domain(data.map(d => d[xColumn]));
-        yScale.domain([0, d3.max(data, d => d[yColumn])]);
+        // Filter the data
+        filteredRates = data.rates.filter(v => v.rate < 10);
 
+        // Set the domains
+        xScale.domain(filteredRates.map(d => d[xColumn]));
+        yScale.domain([0, d3.max(filteredRates, d => d[yColumn])]);
+
+        // Render the axes
         xAxisG.call(xAxis);
+        yAxisLabel.text(data.base);
         yAxisG.call(yAxis);
 
-        const bars = g.selectAll("rect").data(data);
+        // Render the bars
+        const bars = g.selectAll("rect").data(filteredRates);
         bars.enter().append("rect");
-
-        // Draws from the top down - so height goes down fro x,y position
         bars
           .attr("x",			d => xScale(d[xColumn]))
           .attr("y", 			d => yScale(d[yColumn]))
           .attr("width",  xScale.rangeBand())
           .attr("height", d => innerHeight - yScale(d[yColumn]))
           .attr("fill", 	d => colorScale(d[colorColumn]));
-
         bars.exit().remove();
         
       }
 
-      function type(d){
-        d.population = +d.population;
-        return d;
-      }
+      // function type(d){
+      //   d.population = +d.population;
+      //   return d;
+      // }
 
-      d3.csv("/assets/data/citiesTop3.csv", type, render);
+      d3.json('http://api.fixer.io/latest', (error, data) => {
+        if (error) return console.warn(error);
+
+        let rates = [];
+        for (prop in data.rates) {
+          rates.push({
+            symbol: prop,
+            rate: data.rates[prop]
+          });
+        }
+
+        data.rates = rates;
+        render(data);
+      });
 
     </script>
   </body>

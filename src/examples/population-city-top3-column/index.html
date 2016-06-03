@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>D3 Example</title>
+    <title>Population by City (Top 3) - Column Bar Chart</title>
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
     <link href='//fonts.googleapis.com/css?family=Poiret+One' rel='stylesheet' type='text/css'>
     <style>
@@ -12,20 +12,11 @@
         font-family: 'Poiret One', cursive;
       }
 
-      .axis .label {
-        font-size: 1.5rem;
-      }
-
       .axis path,
       .axis line {
         fill: none;
         stroke: #000;
         shape-rendering: crispEdges;
-      }
-
-      .y.axis path,
-      .y.axis line {
-        stroke: none;
       }
 
     </style>
@@ -35,13 +26,11 @@
 
       const outerWidth = 500,
       			outerHeight = 250,
-      			margin = { left: 130, top: 0, right: 0, bottom: 60 },
+      			margin = { left: 100, top: 30, right: 30, bottom: 50 },
       			barPadding = 0.2,
-      			xColumn = "population",
-      			yColumn = "name",
-      			colorColumn = "name"
-      			xAxisLabelText = "Population",
-      			xAxisLabelOffset = 55;
+      			xColumn = "name",
+      			yColumn = "population",
+      			colorColumn = "name";
 
       const innerWidth  = outerWidth  - margin.left - margin.right,
       			innerHeight = outerHeight - margin.top  - margin.bottom;
@@ -56,33 +45,25 @@
       const xAxisG = g.append("g")
       	.attr("class", "x axis")
         .attr("transform", `translate(0, ${innerHeight})`);
-
-      const xAxisLabel = xAxisG.append("text")
-        .style("text-anchor", "middle")
-        .attr("x", innerWidth / 2)
-        .attr("y", xAxisLabelOffset)
-        .attr("class", "label")
-        .text(xAxisLabelText);
-
       const yAxisG = g.append("g")
       	.attr("class", "y axis");
 
-      const xScale = d3.scale.linear().range([0, innerWidth]),
-      			yScale = d3.scale.ordinal().rangeBands([0, innerHeight], barPadding),
+      const xScale = d3.scale.ordinal().rangeBands([0, innerWidth], barPadding),
+      			yScale = d3.scale.linear().range([innerHeight, 0]),
       			colorScale = d3.scale.category10();
 
       const xAxis = d3.svg.axis().scale(xScale)
-      	.ticks(5)
-      	.tickFormat(d3.format("s"))
       	.outerTickSize(0);
       const yAxis = d3.svg.axis().scale(yScale)
       	.orient("left")
+      	.ticks(5)
+      	.tickFormat(d3.format("s"))
       	.outerTickSize(0);
 
       function render(data){
 
-        xScale.domain([0, d3.max(data, d => d[xColumn])]);
-        yScale.domain(data.map(d => d[yColumn]));
+        xScale.domain(data.map(d => d[xColumn]));
+        yScale.domain([0, d3.max(data, d => d[yColumn])]);
 
         xAxisG.call(xAxis);
         yAxisG.call(yAxis);
@@ -92,10 +73,10 @@
 
         // Draws from the top down - so height goes down fro x,y position
         bars
-          .attr("x",			0)
+          .attr("x",			d => xScale(d[xColumn]))
           .attr("y", 			d => yScale(d[yColumn]))
-          .attr("width",  d => xScale(d[xColumn]))
-          .attr("height", yScale.rangeBand())
+          .attr("width",  xScale.rangeBand())
+          .attr("height", d => innerHeight - yScale(d[yColumn]))
           .attr("fill", 	d => colorScale(d[colorColumn]));
 
         bars.exit().remove();
@@ -107,7 +88,7 @@
         return d;
       }
 
-      d3.csv("/assets/data/citiesTop3.csv", type, render);
+      d3.csv("data.csv", type, render);
 
     </script>
   </body>
